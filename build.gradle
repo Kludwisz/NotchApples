@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+    //maven { url "https://maven.latticg.com" }
+    maven { url "https://maven.seedfinding.com" }
+    maven { url "https://www.jitpack.io" }
+}
+
+application {
+	mainClass = "notches.Main"
+}
+
+dependencies {
+    implementation('com.seedfinding:mc_feature:1.171.5') 	{ transitive = true }
+    implementation('com.github.Kludwisz:AncientCityGenerator:master-SNAPSHOT') { transitive = true }
+    implementation 'com.github.KalleStruik:noise-sampler:1.0.0'
+}
+
