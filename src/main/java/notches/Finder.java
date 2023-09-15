@@ -65,7 +65,8 @@ public class Finder {
 		
 		ArrayList<Pair<CPos, Long>> chestChunks = new ArrayList<>();
 		for (CPos key : treasureChestCallMap.keySet()) {
-			chestChunks.add(new Pair<>(key, treasureChestCallMap.get(key)));
+			if (treasureChestCallMap.get(key) != 0)
+				chestChunks.add(new Pair<>(key, treasureChestCallMap.get(key)));
 		}
 		
 		long encodedChests, chestType;
@@ -88,7 +89,7 @@ public class Finder {
 					
 					if (lootseed == 217704587079581L && chestType == 2) {
 						checkWorldSeed(worldseed, cityChunk, cp, gen.getPieces().get(0).box.getCenter());
-						return;
+						// return;
 					}
 				}
 			}
