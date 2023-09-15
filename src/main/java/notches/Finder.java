@@ -65,7 +65,7 @@ public class Finder {
 		
 		ArrayList<Pair<CPos, Long>> chestChunks = new ArrayList<>();
 		for (CPos key : treasureChestCallMap.keySet()) {
-			if (treasureChestCallMap.get(key) != 0)
+			if (treasureChestCallMap.get(key) != 0L)
 				chestChunks.add(new Pair<>(key, treasureChestCallMap.get(key)));
 		}
 		
