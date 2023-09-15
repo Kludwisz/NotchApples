@@ -42,7 +42,7 @@ public class Main {
         }
         System.out.flush();
 	}
-
+/*
 	public static void testRun() {
 		FinderTest.find();
 	}
@@ -74,4 +74,5 @@ public class Main {
 		System.out.println("Deep dark: " + counter);
 		System.out.println("Probability (%): " + prob);
 	}
+*/
 }
