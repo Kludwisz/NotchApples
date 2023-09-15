@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.seedfinding.mccore.rand.ChunkRand;
 import com.seedfinding.mccore.util.data.Pair;
+import com.seedfinding.mccore.util.math.Vec3i;
 import com.seedfinding.mccore.util.pos.BPos;
 import com.seedfinding.mccore.util.pos.CPos;
 import com.seedfinding.mccore.version.MCVersion;
@@ -86,7 +87,7 @@ public class Finder {
 					long lootseed = decoRand.nextLong() & MASK48;
 					
 					if (lootseed == 217704587079581L && chestType == 2) {
-						checkWorldSeed(worldseed, cityChunk, cp);
+						checkWorldSeed(worldseed, cityChunk, cp, gen.getPieces().get(0).box.getCenter());
 						return;
 					}
 				}
@@ -94,16 +95,21 @@ public class Finder {
 		}
 	}
 	
-	private static void checkWorldSeed(long worldseed, CPos city, CPos chestchunkpos) {
+	// huge thanks to Andrew for fixing this
+	private static void checkWorldSeed(long worldseed, CPos city, CPos chestchunkpos, Vec3i centerOfFirstPiece) {
 		NoiseSampler sampler = new NoiseSampler(worldseed, Dimension.OVERWORLD);
 		
-		Map<NoiseType, Double> noise = sampler.queryNoiseFromBlockPos(city.getX()<<4, 0, city.getZ()<<4, NoiseType.EROSION, NoiseType.DEPTH);
-		double D = noise.get(NoiseType.DEPTH);
-		if (D < 0.9d) return;
-		double E = noise.get(NoiseType.EROSION);
-		if (E > -0.225d) return;
+		Map<NoiseType, Double> noise = sampler.queryNoiseFromBlockPos(centerOfFirstPiece.getX(), -27 >> 2, centerOfFirstPiece.getZ(), NoiseType.EROSION, NoiseType.DEPTH);
 		
-		// found a good worldseed
-		System.out.println(worldseed + " " + chestchunkpos.getX() + " " + chestchunkpos.getZ() + " " + city.getX() + " " + city.getZ());
+		double D = noise.get(NoiseType.DEPTH);
+        double E = noise.get(NoiseType.EROSION);
+
+        double dD = 1.1 - D;
+        double dE = Math.max(E + 0.375, 0);
+        double dsD = Math.max(D - 1.0, 0);
+
+        if (dD * dD + dE * dE < dsD * dsD) {
+        	System.out.println(worldseed + " " + chestchunkpos.getX() + " " + chestchunkpos.getZ() + " " + city.getX() + " " + city.getZ());
+        }
 	}
 }

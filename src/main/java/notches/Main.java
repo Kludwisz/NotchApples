@@ -4,17 +4,23 @@ import java.io.File;
 import java.util.Map;
 import java.util.Scanner;
 
+import com.seedfinding.mccore.rand.ChunkRand;
+import com.seedfinding.mccore.util.math.Vec3i;
+import com.seedfinding.mccore.util.pos.BPos;
 import com.seedfinding.mccore.util.pos.CPos;
+import com.seedfinding.mccore.version.MCVersion;
 
+import kludwisz.ancientcity.AncientCity;
+import kludwisz.ancientcity.AncientCityGenerator;
 import nl.kallestruik.noisesampler.NoiseSampler;
 import nl.kallestruik.noisesampler.NoiseType;
 import nl.kallestruik.noisesampler.minecraft.Dimension;
 
 public class Main {
 	public static void main(String [] args) {
-		// worldSeedTest();
+		worldSeedTest();
 		// testRun();
-		runMicroboincApp(args);
+		// runMicroboincApp(args);
 	}
 	
 	public static void runMicroboincApp(String [] args) {
@@ -42,15 +48,19 @@ public class Main {
         }
         System.out.flush();
 	}
-/*
+
 	public static void testRun() {
-		FinderTest.find();
+		FinderTestPackedArrays.find();
 	}
 	
+	static final AncientCity CITY = new AncientCity(MCVersion.v1_19_2);
 	private static void worldSeedTest() {
-		CPos city = new CPos(13, 37);
-		
-		long structseed = 12345678901L;
+		long structseed = 12345124901L;
+		CPos city = CITY.getInRegion(structseed, 0, 0, new ChunkRand());
+		ACGen gen = new ACGen();
+		gen.generate(structseed, city.getX(), city.getZ(), new ChunkRand());
+		Vec3i centerOfFirstPiece = gen.pieces.get(0).box.getCenter();
+
 		long worldseed;
 		int counter = 0;
 		int total = 1<<16;
@@ -59,13 +69,19 @@ public class Main {
 			worldseed = (up16<<48) | structseed;
 			NoiseSampler sampler = new NoiseSampler(worldseed, Dimension.OVERWORLD);
 			
-			Map<NoiseType, Double> noise = sampler.queryNoiseFromBlockPos(city.getX()<<4, 0, city.getZ()<<4, NoiseType.EROSION, NoiseType.DEPTH);
-			double D = noise.get(NoiseType.DEPTH);
-			if (D < 0.9d) continue;
-			double E = noise.get(NoiseType.EROSION);
-			if (E > -0.225d) continue;
+ 			Map<NoiseType, Double> noise = sampler.queryNoiseFromBlockPos(centerOfFirstPiece.getX(), -27 >> 2, centerOfFirstPiece.getZ(), NoiseType.EROSION, NoiseType.DEPTH);
 			
-			counter++;
+			double D = noise.get(NoiseType.DEPTH);
+	        double E = noise.get(NoiseType.EROSION);
+
+	        double dD = 1.1 - D;
+	        double dE = Math.max(E + 0.375, 0);
+	        double dsD = Math.max(D - 1.0, 0);
+
+	        if (dD * dD + dE * dE < dsD * dsD) {
+	        	counter++;
+	        	//System.out.println(worldseed + " /tp " + city.getX()*16 + " -32 " + city.getZ()*16);
+	        }
 		}
 		
 		double prob = (double)counter / (double)total;
@@ -74,5 +90,4 @@ public class Main {
 		System.out.println("Deep dark: " + counter);
 		System.out.println("Probability (%): " + prob);
 	}
-*/
 }
