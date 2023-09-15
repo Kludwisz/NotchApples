@@ -2,6 +2,7 @@ package notches;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import com.seedfinding.mccore.util.pos.BPos;
 import com.seedfinding.mccore.util.pos.CPos;
 import com.seedfinding.mccore.version.MCVersion;
 import com.seedfinding.mcfeature.loot.LootTable;
+import com.seedfinding.mcmath.util.Mth;
 
 import kludwisz.ancientcity.AncientCity;
 import kludwisz.ancientcity.AncientCityGenerator;
@@ -22,6 +24,7 @@ import nl.kallestruik.noisesampler.minecraft.Dimension;
 
 public class FinderTest {
 
+	static final long MASK48 = Mth.MASK_48;
 	static final long MAX16 = 1L << 16;
 	static final ChunkRand rand = new ChunkRand();
 	static final DecoratorRand decoRand = new DecoratorRand();
@@ -30,7 +33,7 @@ public class FinderTest {
 
 	final static int TESTSIZE = 500;
 	public static void find() {
-		AncientCityChest.compute();
+
 		for (int i=0; i<TESTSIZE; i++) {
 			processLoot(i);
 		}
@@ -53,7 +56,6 @@ public class FinderTest {
 	private static long avgC = 0;
 	
 	private static void processLoot(long structseed) {
-		//System.out.println(structseed);
 		long point1 = System.nanoTime();
 		
 		CPos cityChunk = CITY.getInRegion(structseed, 0, 0, rand);
@@ -63,49 +65,60 @@ public class FinderTest {
 		long point2 = System.nanoTime();
 		
 		List<Pair<BPos, LootTable>> chests = gen.getChests();
-		HashMap<CPos, ArrayList<Boolean>> treasureChestCallMap = new HashMap<>(); 
+		HashMap<CPos, Long> treasureChestCallMap = new HashMap<>(); 
 		
-		for (Pair<BPos, LootTable> chest : chests) {
+		// filling the long in reverse order so that the first chest is in the 2 least significant bits
+		for (int i=chests.size()-1; i>=0; i--) {
+			Pair<BPos, LootTable> chest = chests.get(i);
 			CPos chestChunk = chest.getFirst().toChunkPos();
-			treasureChestCallMap.putIfAbsent(chestChunk, new ArrayList<Boolean>());
-			treasureChestCallMap.get(chestChunk).add(chest.getSecond().lootPools.length == 2);
+			treasureChestCallMap.putIfAbsent(chestChunk, 0L);
+			long val = treasureChestCallMap.get(chestChunk);
+			val <<= 2; // there shouldnt be any overflow, since there's likely no seed with 32 chests in a single chunk
+			
+			long type = chest.getSecond().lootPools.length==2 ? 2L : 3L;
+			
+			// we dont care about ice box chests that exist at the end of the sequence,
+			// the following line allows to skip them
+			if (val==0L && type==3L) continue;
+			
+			val |= type;
+			treasureChestCallMap.replace(chestChunk, val);
 		}
 		
-		ArrayList< Pair<CPos, List<Boolean>> > chestChunks = new ArrayList<>();
+		ArrayList<Pair<CPos, Long>> chestChunks = new ArrayList<>();
 		for (CPos key : treasureChestCallMap.keySet()) {
 			chestChunks.add(new Pair<>(key, treasureChestCallMap.get(key)));
 		}
 		
 		long point3 = System.nanoTime();
+		int checked = 0;
 		
+		long encodedChests, chestType;
 		long worldseed;
 		CPos cp;
-		int checked = 0;
 		
 		for (long up16=0; up16!=MAX16; up16++) {	
 			worldseed = (up16<<48) | structseed;
 			
-			for (Pair<CPos, List<Boolean>> chestchunk : chestChunks) {
+			for (Pair<CPos, Long> chestchunk : chestChunks) {
 				cp = chestchunk.getFirst();
 				long popseed = decoRand.getPopulationSeed(worldseed, cp.getX()<<4, cp.getZ()<<4);
 				decoRand.setDecoratorSeed(popseed, 0, 7);
 				
-				for (boolean isTreasure : chestchunk.getSecond()) {
-					long lootseed = decoRand.nextLong();
+				encodedChests = chestchunk.getSecond();
+				while (encodedChests != 0) {
 					checked++;
-					if (isTreasure) {
-						int notchcount = AncientCityChest.getNotches(lootseed);
-						if (notchcount >= 12) {
-						//if (lootseed == 1234567L) {
-							checkWorldSeed(worldseed, cityChunk, cp);
-							return;
-						}
-						//}
+					chestType = encodedChests & 3;
+					encodedChests >>= 2;
+					long lootseed = decoRand.nextLong() & MASK48;
+					
+					if (lootseed == 217704587079581L && chestType == 2) {
+						checkWorldSeed(worldseed, cityChunk, cp);
+						return;
 					}
 				}
 			}
 		}
-		
 		long point4 = System.nanoTime();
 		
 		avgT1 += (point2-point1)/1000000;
@@ -122,7 +135,7 @@ public class FinderTest {
 		if (D < 0.9d) return;
 		double E = noise.get(NoiseType.EROSION);
 		if (E > -0.225d) return;
-		
-		System.out.println("\nOver 10 Notches: " + " ->  " + worldseed + " @ " + chest.toBlockPos(-50));
+
+		System.out.println(worldseed + " " + chest.getX() + " " + chest.getZ() + " " + city.getX() + " " + city.getZ());
 	}
 }

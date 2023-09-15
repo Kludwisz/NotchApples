@@ -11,6 +11,7 @@ import com.seedfinding.mccore.util.pos.BPos;
 import com.seedfinding.mccore.util.pos.CPos;
 import com.seedfinding.mccore.version.MCVersion;
 import com.seedfinding.mcfeature.loot.LootTable;
+import com.seedfinding.mcmath.util.Mth;
 
 import kludwisz.ancientcity.AncientCity;
 import kludwisz.ancientcity.AncientCityGenerator;
@@ -21,14 +22,15 @@ import nl.kallestruik.noisesampler.minecraft.Dimension;
 
 public class Finder {
 	static final long MAX16 = 1L << 16;
+	static final long MASK48 = Mth.MASK_48;
 	static final ChunkRand rand = new ChunkRand();
 	static final DecoratorRand decoRand = new DecoratorRand();
 	static final AncientCity CITY = new AncientCity(MCVersion.v1_19_2);
 	static AncientCityGenerator gen;
-	public static int targetNotchCount; // set in main
+	// public static int targetNotchCount; // set in main
 
 	public static void find(long seedMin, long seedMax) {
-		AncientCityChest.compute();
+		//AncientCityChest.compute();
 		for (long i = seedMin; i <= seedMax; i++) {
 			processLoot(i);
 		}
@@ -40,38 +42,52 @@ public class Finder {
 		gen.generate(structseed, cityChunk.getX(), cityChunk.getZ(), rand);
 		
 		List<Pair<BPos, LootTable>> chests = gen.getChests();
-		HashMap<CPos, ArrayList<Boolean>> treasureChestCallMap = new HashMap<>(); 
+		HashMap<CPos, Long> treasureChestCallMap = new HashMap<>(); 
 		
-		for (Pair<BPos, LootTable> chest : chests) {
+		// filling the long in reverse order so that the first chest is in the 2 least significant bits
+		for (int i=chests.size()-1; i>=0; i--) {
+			Pair<BPos, LootTable> chest = chests.get(i);
 			CPos chestChunk = chest.getFirst().toChunkPos();
-			treasureChestCallMap.putIfAbsent(chestChunk, new ArrayList<Boolean>());
-			treasureChestCallMap.get(chestChunk).add(chest.getSecond().lootPools.length == 2);
+			treasureChestCallMap.putIfAbsent(chestChunk, 0L);
+			long val = treasureChestCallMap.get(chestChunk);
+			val <<= 2; // there shouldnt be any overflow, since there's likely no seed with 32 chests in a single chunk
+			
+			long type = chest.getSecond().lootPools.length==2 ? 2L : 3L;
+			
+			// we dont care about ice box chests that exist at the end of the sequence,
+			// the following line allows to skip them
+			if (val==0L && type==3L) continue;
+			
+			val |= type;
+			treasureChestCallMap.replace(chestChunk, val);
 		}
 		
-		ArrayList< Pair<CPos, List<Boolean>> > chestChunks = new ArrayList<>();
+		ArrayList<Pair<CPos, Long>> chestChunks = new ArrayList<>();
 		for (CPos key : treasureChestCallMap.keySet()) {
 			chestChunks.add(new Pair<>(key, treasureChestCallMap.get(key)));
 		}
 		
+		long encodedChests, chestType;
 		long worldseed;
 		CPos cp;
 		
-		for (long up16=0; up16!=MAX16; up16++) {	
+		for (long up16=0; up16<MAX16; up16++) {	
 			worldseed = (up16<<48) | structseed;
 			
-			for (Pair<CPos, List<Boolean>> chestchunk : chestChunks) {
+			for (Pair<CPos, Long> chestchunk : chestChunks) {
 				cp = chestchunk.getFirst();
 				long popseed = decoRand.getPopulationSeed(worldseed, cp.getX()<<4, cp.getZ()<<4);
 				decoRand.setDecoratorSeed(popseed, 0, 7);
 				
-				for (boolean isTreasure : chestchunk.getSecond()) {
-					long lootseed = decoRand.nextLong();
-					if (isTreasure) {
-						int notchcount = AncientCityChest.getNotches(lootseed);
-						if (notchcount >= 12) {
-							checkWorldSeed(worldseed, cityChunk, cp);
-							return;
-						}
+				encodedChests = chestchunk.getSecond();
+				while (encodedChests != 0) {
+					chestType = encodedChests & 3;
+					encodedChests >>= 2;
+					long lootseed = decoRand.nextLong() & MASK48;
+					
+					if (lootseed == 217704587079581L && chestType == 2) {
+						checkWorldSeed(worldseed, cityChunk, cp);
+						return;
 					}
 				}
 			}
@@ -88,12 +104,6 @@ public class Finder {
 		if (E > -0.225d) return;
 		
 		// found a good worldseed
-		System.out.println(worldseed + " " + chestchunkpos.getX() + " " + chestchunkpos.getZ());
-		
-		//try {
-		//	FileWriter fout = new FileWriter(new File(""), true);
-		//	fout.append(Long.toString(worldseed) + " " + chestchunkpos.toBlockPos(-50).toString() + "\n");
-		//	fout.close();
-		//} catch (IOException ex) {}
+		System.out.println(worldseed + " " + chestchunkpos.getX() + " " + chestchunkpos.getZ() + " " + city.getX() + " " + city.getZ());
 	}
 }
