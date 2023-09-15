@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.Scanner;
 
+/*
 import com.seedfinding.mccore.rand.ChunkRand;
 import com.seedfinding.mccore.util.math.Vec3i;
 import com.seedfinding.mccore.util.pos.BPos;
@@ -15,6 +16,7 @@ import kludwisz.ancientcity.AncientCityGenerator;
 import nl.kallestruik.noisesampler.NoiseSampler;
 import nl.kallestruik.noisesampler.NoiseType;
 import nl.kallestruik.noisesampler.minecraft.Dimension;
+*/
 
 public class Main {
 	public static void main(String [] args) {
