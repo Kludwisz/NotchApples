@@ -18,9 +18,9 @@ import nl.kallestruik.noisesampler.minecraft.Dimension;
 
 public class Main {
 	public static void main(String [] args) {
-		worldSeedTest();
+		// worldSeedTest();
 		// testRun();
-		// runMicroboincApp(args);
+		runMicroboincApp(args);
 	}
 	
 	public static void runMicroboincApp(String [] args) {
