@@ -44,7 +44,7 @@ public class Main {
 	}
 
 	public static void testRun() {
-		FinderTestPackedArrays.find();
+		FinderTest.find();
 	}
 	
 	private static void worldSeedTest() {
