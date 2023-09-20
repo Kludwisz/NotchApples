@@ -88,7 +88,7 @@ public class Finder {
 					long lootseed = decoRand.nextLong() & MASK48;
 					
 					if (lootseed == 217704587079581L && chestType == 2) {
-						checkWorldSeed(worldseed, cityChunk, cp, gen.getPieces().get(0).box.getCenter());
+						checkWorldSeed(worldseed, cityChunk, cp, gen.pieces[0].box.getCenter());
 						// return;
 					}
 				}
