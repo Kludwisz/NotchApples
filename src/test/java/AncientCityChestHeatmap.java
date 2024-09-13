@@ -12,7 +12,7 @@ import java.io.File;
 public class AncientCityChestHeatmap {
     public static void main(String[] args) {
         final double heatScaler = 2.0D;
-        final long sampleSize = 1_000_000L;
+        final long sampleSize = 2_000_000L;
         AncientCityGenerator gen = new AncientCityGenerator();
         ChunkRand rand = new ChunkRand();
 
