@@ -101,7 +101,7 @@ public class Finder {
 	}
 	
 	// huge thanks to Andrew for fixing this
-	private static boolean ancientCityCanSpawn(long worldseed, Vec3i centerOfFirstPiece) {
+	public static boolean ancientCityCanSpawn(long worldseed, Vec3i centerOfFirstPiece) {
 		NoiseSampler sampler = new NoiseSampler(worldseed, Dimension.OVERWORLD);
 		
 		Map<NoiseType, Double> noise = sampler.queryNoiseFromBlockPos(centerOfFirstPiece.getX(), -27 >> 2, centerOfFirstPiece.getZ(), NoiseType.EROSION, NoiseType.DEPTH);
